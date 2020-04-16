@@ -25,4 +25,18 @@ public class Terminal extends GrammaSymbol {
     return tk;
   }
 
+  /**
+   * Determines whether the input terminator is the same as this one
+   * 
+   * @param anotherTerminal
+   * @return true or false
+   */
+  public boolean ifSame(Terminal anotherTerminal) {
+    if (this.tk.getWordSerialNumber() == anotherTerminal.tk.getWordSerialNumber()
+        && this.tk.getWordValue() == anotherTerminal.tk.getWordValue()) {
+      return true;
+    }
+    return false;
+  }
+
 }

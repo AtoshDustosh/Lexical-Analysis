@@ -22,4 +22,17 @@ public class NoneTerminal extends GrammaSymbol {
     return symbolString;
   }
 
+  /**
+   * Determines whether the input non-terminator is the same as this one
+   * 
+   * @param anotherNonTerminal
+   * @return true or false
+   */
+  public boolean ifSame(NoneTerminal anotherNonTerminal) {
+    if (this.symbolString.contentEquals(anotherNonTerminal.symbolString)) {
+      return true;
+    }
+    return false;
+  }
+
 }
