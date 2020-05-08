@@ -1,0 +1,86 @@
+目前来说，虽然说要一个个字符地识别，并且忽略部分空格和制表符，但是也不能全部忽略。当目前仍然处于某个DFA内部未完成识别，或者说未出错时，是不应该忽略空格和制表符的。
+
+算法流程：
+	1. 根据当前字符指针读入一个字符
+	根据条件（当前字符指针是否指向第一个字符）判断是否要忽略读入的空格或制表符；
+	2. 根据当前读入的字符，判断进入哪一个分析器进行处理，并处理字符
+		2.1 根据DFA转换表和当前字符的匹配表项，分析器进入下一个状态，分析器出错，或者分析完成
+		2.2 返回最终分析器对当前字符的分析结果
+	3. 根据分析器的分析结果，判断处理流程
+		3.1 如果分析未完成（分析器进入下一个状态），将字符指针后移
+		3.2 如果分析出错，弹出第一个字符，字符指针重置
+		3.3 如果分析完成，弹出当前成功识别的字符串，字符指针重置，并重置所有分析器
+
+下面是最初版本的算法实现 ... 杂乱无章，混乱，无序，复杂，没条理
+  public Tokens analyzeFile(String filePath) {
+    try {
+      Scanner scanner = new Scanner(new FileInputStream(filePath));
+
+      // read input file and split into characters
+      while (scanner.hasNext()) {
+        String analysisResult = "";
+        String line = scanner.nextLine() + "\n";
+        System.out.printf(" -> line: " + line);
+
+        char[] lineChars = line.toCharArray();
+        for (int i = 0; i < lineChars.length; i++) {
+          // analyze characters
+
+          if (this.presentChIndexInChList == 0) {
+            // ignore ' ' and '\t' when DFA analyzer has not started
+            if (lineChars[i] == ' ' || lineChars[i] == '\t') {
+              continue;
+            }
+          }
+          // load a character from input file
+          this.chList.add(lineChars[i]);
+          analysisResult = this
+              .analyzeChar(this.chList.get(this.presentChIndexInChList));
+
+          System.out.println(this.presentChIndexInChList + " ("
+              + this.chList.get(this.presentChIndexInChList)
+              + ")analysis result: " + analysisResult);
+
+          // process of analysis
+          if (this.isNonnegativeInteger(analysisResult)) {
+            // token not recognized - if new entry of the DFA table is a non-negative integer
+            int value = Integer.valueOf(analysisResult);
+            if (value == 0) {
+              // error occurs - ignore temporary character and re-analyze
+              char wrongCh = this.chList.remove(0);
+              this.resetAllAnalyzer();
+              this.presentChIndexInChList = 0;
+              System.out.println("analysis error - ignore \"" + wrongCh + "\"");
+              continue;
+            } else {
+              // enter next state successfully - continue analysis
+              this.presentChIndexInChList++;
+            }
+          } else if (analysisResult.equals(DfaAnalyzer.analysisNotFinished)) {
+            this.presentChIndexInChList++;
+          } else if (analysisResult.equals(DfaAnalyzer.analysisError)) {
+            this.chList.remove(0);
+            this.resetAllAnalyzer();
+            this.presentChIndexInChList = 0;
+          } else {
+            // token recognized - new entry of the DFA table is not a number
+            // create a token and remove corresponding characters in chList
+            Token token = this.buildToken(analysisResult,
+                this.presentChIndexInChList);
+            for (int k = 0; k < this.presentChIndexInChList; k++) {
+              this.chList.remove(0);
+            }
+            this.tokens.add(token);
+            System.out.println(token.toString());
+            System.out.println("chList: " + this.chList.toString());
+            this.resetAllAnalyzer();
+            this.presentChIndexInChList = 0;
+          }
+        }
+      }
+
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    }
+    return this.tokens.getTokensCopy();
+  }
